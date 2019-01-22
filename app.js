@@ -20,7 +20,9 @@ const joiSchema = Joi.object().keys({
   })
 const joiSchemaMovie = Joi.object().keys({
     category: Joi.string(),
-    movies :[Joi.string().required]  
+    movies :[{
+        movieName: Joi.string().required()
+        }]  
 })
 
 const joiSchemaMovies = Joi.object().keys({
@@ -37,8 +39,7 @@ function validateCat(category){
     return Joi.validate( category , joiSchema)
 }
 function validateMovieName(movie){
-    console.log("function", movie)
-    return Joi.validate( movie , joiSchemaMovie)
+    return Joi.validate( movie , joiSchemaMovies)
 }
 
 app.get('/',(req,res) => {
@@ -96,14 +97,8 @@ app.put('/api/category',(req,res) =>{
  })
 
 app.post('/api/category/:category',(req,res) =>{
-
-    let data = {
-        category: req.params.category,
-        movies :  [req.body.movieName],
-    }
-
-    const result = validateMovieName(data);
-    console.log("error",result);
+    const result = validateMovieName(req.body);
+    console.log("error",req.body , result.error);
     if(result.error){
         res.status(400).send(result.error.details[0].message);
         return ;
@@ -114,32 +109,30 @@ app.post('/api/category/:category',(req,res) =>{
         console.log("dkj",item)
         if(item !== null){   
             Movie.findOne({category : req.params.category },(err , item1) => {
-                //console.log("item1",item1  , req.params.category )
-                let array = [] ;
-                array.push(req.body.movieName)
+                console.log("item1",item1  , req.params.category )
                 if(item1 !== null){
-                    let movieData =  new Movie({
-                        category: req.params.category,
-                        movies :  array,
-                    });     
-
-                     console.log("movieData if ",movieData , array)
-                     movieData.save().then(item => {
-                             console.log("item ",item);
-                             res.send(item);
-                         }).catch(err => {
-                             console.log("err database", err)
-                                 res.status(400).send("unable to save to database");
-                     })
+                    // Movie.findByIdAndUpdate(item._id , {
+                    //     $push 
+                    // })
+                    let movieData =  new Movie();     
+                   // movieData.movies = [];                    
+                    movieData.movies = [(req.body)];
+                    movieData.category = (req.params.category) ;
+                    console.log("movieData",movieData)
+                    movieData.save().then(item => {
+                            console.log("item ",item);
+                            res.send(item);
+                        }).catch(err => {
+                            console.log("err database", err)
+                                res.status(400).send("unable to save to database");
+                    })
+                    
                 }else{ 
-                    let movieData =  new Movie({
-                        category: req.params.category,
-                        movies :[(req.body.movieName)] ,
-                    });     
+                    let movieData =  new Movie();     
                     // movieData.movies = [];                    
-                     //movieData.movies = [(req.body)];
-                     //movieData.category = (req.params.category) ;
-                     console.log("movieData else",movieData)
+                     movieData.movies = [(req.body)];
+                     movieData.category = (req.params.category) ;
+                     console.log("movieData",movieData)
                      movieData.save().then(item => {
                              console.log("item ",item);
                              res.send(item);
